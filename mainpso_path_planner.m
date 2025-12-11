@@ -269,6 +269,7 @@ function [best_fitness, best_path, best_len, conv_curve] = PSO_3D(params, env, b
     % 初始化粒子（增加碰撞检测，避免初始穿障）
     pop = zeros(pop_size, path_dim);
     for i = 1:pop_size
+        try_count = 0; % 【新增：计数器清零】
         while true
             % 生成初始路径点
             pop(i, 1:3) = env.start;  % 起点
@@ -281,6 +282,10 @@ function [best_fitness, best_path, best_len, conv_curve] = PSO_3D(params, env, b
             % 检查初始路径是否穿障，不穿障则跳出循环
             path_3d = reshape(pop(i,:), 3, [])';
             if ~is_path_collide(path_3d, buildings, params.safety_dist)
+                break;
+            end
+            % 【新增：如果不撞墙太难找，尝试50次后强制跳出，防止卡死】
+            if try_count > 50
                 break;
             end
         end
@@ -356,7 +361,9 @@ function [best_fitness, best_path, best_len, conv_curve] = IPSO_3D(params, env, 
     % 1. 混沌初始化（均匀化级联Logistics映射+避障检测）
     pop = zeros(pop_size, path_dim);
     for i = 1:pop_size
+        try_count = 0; % 【新增：计数器清零】
         while true
+            try_count = try_count + 1; % 【新增：尝试次数+1】
             pop(i, 1:3) = env.start;  % 起点
             x0 = rand();  % 混沌初始值
             for j = 4:3:(path_dim-3)
@@ -374,6 +381,10 @@ function [best_fitness, best_path, best_len, conv_curve] = IPSO_3D(params, env, 
             % 检查初始路径是否穿障
             path_3d = reshape(pop(i,:), 3, [])';
             if ~is_path_collide(path_3d, buildings, params.safety_dist)
+                break;
+            end
+            % 【新增：强制跳出防止卡死】
+            if try_count > 50
                 break;
             end
         end
@@ -478,6 +489,7 @@ function [best_fitness, best_path, best_len, conv_curve] = SPSO_3D(params, env, 
     % 初始化粒子（避障检测）
     pop = zeros(pop_size, path_dim);
     for i = 1:pop_size
+        try_count = 0; % 【一定要加这一句！】
         while true
             try_count = try_count + 1;
             pop(i, 1:3) = env.start;
@@ -565,7 +577,9 @@ function [best_fitness, best_path, best_len, conv_curve] = GWO_3D(params, env, b
     % 初始化狼群（避障检测）
     pop = zeros(pop_size, path_dim);
     for i = 1:pop_size
+        try_count = 0; % 【新增：计数器清零】
         while true
+            try_count = try_count + 1; % 【新增：尝试次数+1】
             pop(i, 1:3) = env.start;
             for j = 4:3:(path_dim-3)
                 pop(i,j) = env.start(1) + rand()*(env.goal(1)-env.start(1));
@@ -576,6 +590,10 @@ function [best_fitness, best_path, best_len, conv_curve] = GWO_3D(params, env, b
             % 检查初始路径是否穿障
             path_3d = reshape(pop(i,:), 3, [])';
             if ~is_path_collide(path_3d, buildings, params.safety_dist)
+                break;
+            end
+            % 【新增：强制跳出防止卡死】
+            if try_count > 50
                 break;
             end
         end
